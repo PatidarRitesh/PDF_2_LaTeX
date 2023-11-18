@@ -1,2 +1,2 @@
 # Pdf_2_LaTeX
-This Repository contain all works of Pdf_2_LaTeX project
+This Repository contains all works of Pdf_2_LaTeX project
