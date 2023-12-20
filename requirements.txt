@@ -1,0 +1,9 @@
+numpy
+pandas
+opencv-python
+transformers
+timm
+albumentations>=1.0.0
+pypdf
+# -e .
+
