@@ -11,6 +11,8 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+pdf_2_tex/dataset/root/
+extras/
 downloads/
 eggs/
 .eggs/
