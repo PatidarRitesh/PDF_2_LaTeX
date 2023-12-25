@@ -143,7 +143,7 @@ class SwinEncoder(nn.Module):
     #     self.align_long_axis = True
     #     self.training = True
 
-    def crop_margin(self, img: Image.Image) -> Image.Image:
+    def crop_margin(img: Image.Image) -> Image.Image:
         data = np.array(img.convert("L"))
         data = data.astype(np.uint8)
         max_val = data.max()
@@ -215,7 +215,7 @@ class SwinEncoder(nn.Module):
             # page_tensor = self.to_tensor(img)
             # print(page_tensor)
             # page_tensor=page_tensor.to('cuda')
-            print(page_tensor.shape)
+            # print(page_tensor.shape)
             if self.input_tensor is None:
                self.input_tensor = page_tensor
             else:
@@ -275,7 +275,7 @@ class BARTDecoder(nn.Module):
         )
         self.model.config.is_encoder_decoder = True  # to get cross-attention
         self.model.model.decoder.embed_tokens.padding_idx = self.tokenizer.pad_token_id
-        self.model.prepare_inputs_for_generation = self.prepare_inputs_for_inference
+        # self.model.prepare_inputs_for_generation = self.prepare_inputs_for_inference
 
         if not name_or_path:
             bart_state_dict = MBartForCausalLM.from_pretrained(

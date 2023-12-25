@@ -5,5 +5,8 @@ transformers
 timm
 albumentations>=1.0.0
 pypdf
+pytorch-lightning
+sconf
+nltk
 # -e .
 
