@@ -177,7 +177,7 @@ class SwinEncoder(nn.Module):
         doc = fitz.open(pdf_path)
         # i=0
         for page_number in range(len(doc)):
-            # if i==5:
+            # if i==1:
             #     break
             page = doc[page_number]
             image = page.get_pixmap()

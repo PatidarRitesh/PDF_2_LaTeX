@@ -140,35 +140,35 @@ def process_data(input_dir, output_dir):
                 
                 #__________________________________________________________________________________
                 # In[2]: remove all the text between \begin{thebibliography} and \end{thebibliography}
-                data,bib_data = remove_content_in_between(data, pattern_bib)
-                if data is None:
-                    # logger.error(f"Error in file {input_dir + '/' + file}: end_pattern: {pattern_bib[1]}, not found")
-                    raise Exception(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
-                    print(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
+                # data,bib_data = remove_content_in_between(data, pattern_bib)
+                # if data is None:
+                #     # logger.error(f"Error in file {input_dir + '/' + file}: end_pattern: {pattern_bib[1]}, not found")
+                #     raise Exception(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
+                #     print(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
                 data,_ = remove_content_in_between(data, pattern_image1)
                 if data is None:
                     raise Exception(f"Pattern Not Found: end_pattern: {pattern_image1[1]}, not found")
-                    print(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
+
                 data,_ = remove_content_in_between(data, pattern_image2)
                 if data is None:
                     raise Exception(f"Pattern Not Found: end_pattern: {pattern_image2[1]}, not found")
-                    print(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
+
                 data,_ = remove_content_in_between(data, pattern_image3)
                 if data is None:
                     raise Exception(f"Pattern Not Found: end_pattern: {pattern_image3[1]}, not found")
-                    print(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
+
                 data,_ = remove_content_in_between(data, pattern_image4)
                 if data is None:
                     raise Exception(f"Pattern Not Found: end_pattern: {pattern_image4[1]}, not found")
-                    print(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
+
                 data,_ = remove_content_in_between(data, pattern_image5)
                 if data is None:
                     raise Exception(f"Pattern Not Found: end_pattern: {pattern_image5[1]}, not found")
-                    print(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
+
                 data,_ = remove_content_in_between(data, pattern_image6)
                 if data is None:
                     raise Exception(f"Pattern Not Found: end_pattern: {pattern_image6[1]}, not found")
-                    print(f"Pattern Not Found: end_pattern: {pattern_bib[1]}, not found")
+
 
                 data = remove_content_outside(data, pattern_meta_data)
                 # print(data)
@@ -188,14 +188,14 @@ def process_data(input_dir, output_dir):
                 # In[]: write back the data
                 file_path = output_dir + "/" + file
                 
-                bib_file_path = output_dir + "/" + os.path.splitext(file)[0] + ".bib"
-                # Use 'w' mode to create a new file (or overwrite an existing one)
-                with open(bib_file_path, "wb") as f:
-                    try:
-                        data1 = bib_data.encode("utf-8")  # Ignore non-UTF-8 characters
-                    except:
-                        data1 = bib_data.encode("latin-1", errors="ignore")
-                    f.write(data1)
+                # bib_file_path = output_dir + "/" + os.path.splitext(file)[0] + ".bib"
+                # # Use 'w' mode to create a new file (or overwrite an existing one)
+                # with open(bib_file_path, "wb") as f:
+                #     try:
+                #         data1 = bib_data.encode("utf-8")  # Ignore non-UTF-8 characters
+                #     except:
+                #         data1 = bib_data.encode("latin-1", errors="ignore")
+                #     f.write(data1)
 
                 # with open(file_path, "w") as f:
                 #     pass  # Using 'pass' to indicate that we're not writing any content to the file
