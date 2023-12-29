@@ -25,27 +25,9 @@ from transformers import (
 )
 from transformers.file_utils import ModelOutput
 from transformers.modeling_utils import PretrainedConfig, PreTrainedModel
-import os
-import torch
-import pandas as pd
-from skimage import io, transform
-import numpy as np
-import matplotlib.pyplot as plt
-from torch.utils.data import Dataset, DataLoader
-from functools import partial
-import random
-from typing import Dict, Tuple, Callable
-from PIL import Image, UnidentifiedImageError
-from typing import List, Optional
-import pypdf
-import orjson
-import jsonlines     
-import fitz  # PyMuPDF
+from pdf_2_tex.postprocessing import postprocess
 from torchvision import transforms
-
-
-
-
+import fitz # PyMuPDF
 
 
 class SwinEncoder(nn.Module):
@@ -133,16 +115,11 @@ class SwinEncoder(nn.Module):
             x: (batch_size, num_channels, height, width)
         """
         x = self.model.patch_embed(x)
-        # x = self.model.pos_drop(x)
+        x = self.model.pos_drop(x)
         x = self.model.layers(x)
         return x
 
     @staticmethod
-    #  def __init__(self):
-    #     self.input_size = [896,672]
-    #     self.align_long_axis = True
-    #     self.training = True
-
     def crop_margin(img: Image.Image) -> Image.Image:
         data = np.array(img.convert("L"))
         data = data.astype(np.uint8)
@@ -157,17 +134,19 @@ class SwinEncoder(nn.Module):
         a, b, w, h = cv2.boundingRect(coords)  # Find minimum spanning bounding box
         return img.crop((a, b, w + a, h + b))
 
-    # def to_tensor(self, img: Image.Image):
+    # @property
+    # def to_tensor(self):
     #     if self.training:
     #         return train_transform
     #     else:
     #         return test_transform
     def to_tensor(self, img: Image.Image):
         if self.training:
-            # return train_transform(image = img)['image']
+            
             return transforms.ToTensor()(img)
         else:
             return transforms.ToTensor()(img)
+
     def prepare_input(self, pdf_path:str, random_padding: bool = False):
         self.input_tensor = None
         if pdf_path is None:
@@ -175,10 +154,10 @@ class SwinEncoder(nn.Module):
         input_size= [896,672]
         # Convert PDF to images using PyMuPDF
         doc = fitz.open(pdf_path)
-        # i=0
+        i=0
         for page_number in range(len(doc)):
-            # if i==1:
-            #     break
+            if i==1:
+                break
             page = doc[page_number]
             image = page.get_pixmap()
             # Convert Pixmap to PIL Image
@@ -215,31 +194,27 @@ class SwinEncoder(nn.Module):
             )
             
             page_tensor = self.to_tensor(ImageOps.expand(img, padding))
-            # page_tensor = self.to_tensor(img)
-            # print(page_tensor)
-            # page_tensor=page_tensor.to('cuda')
-            # print(page_tensor.shape)
+
             if self.input_tensor is None:
                self.input_tensor = page_tensor
             else:
                 self.input_tensor = torch.cat([self.input_tensor, page_tensor], dim=2)
-            # i+=1
+            i+=1
 
-        target_shape = (3, self.input_size[0], self.input_size[1])
-        original_shape = self.input_tensor.shape
-        padding = [0, target_shape[2] - original_shape[2]]
+        # target_shape = (3, self.input_size[0], self.input_size[1])
+        # original_shape = self.input_tensor.shape
+        # padding = [0, target_shape[2] - original_shape[2]]
 
-        # Apply padding using torch.nn.functional.pad
-        self.input_tensor = torch.nn.functional.pad(self.input_tensor, padding)
+        # # Apply padding using torch.nn.functional.pad
+        # self.input_tensor = torch.nn.functional.pad(self.input_tensor, padding)
 
         return self.input_tensor
-       
-    
+
 class BARTDecoder(nn.Module):
     """
     Decoder based on Multilingual BART
     Set the initial weights and configuration with a pretrained multilingual BART model,
-    and modify the detailed configurations as a Nougat decoder
+    and modify the detailed configurations as a  decoder
 
     Args:
         decoder_layer:
@@ -288,7 +263,7 @@ class BARTDecoder(nn.Module):
         )
         self.model.config.is_encoder_decoder = True  # to get cross-attention
         self.model.model.decoder.embed_tokens.padding_idx = self.tokenizer.pad_token_id
-        # self.model.prepare_inputs_for_generation = self.prepare_inputs_for_inference
+        self.model.prepare_inputs_for_generation = self.prepare_inputs_for_inference
 
         if not name_or_path:
             bart_state_dict = MBartForCausalLM.from_pretrained(
@@ -325,6 +300,36 @@ class BARTDecoder(nn.Module):
         if newly_added_num > 0:
             self.model.resize_token_embeddings(len(self.tokenizer))
 
+    def prepare_inputs_for_inference(
+        self,
+        input_ids: torch.Tensor,
+        encoder_outputs: torch.Tensor,
+        past=None,
+        past_key_values=None,
+        use_cache: bool = None,
+        attention_mask: torch.Tensor = None,
+    ):
+        """
+        Args:
+            input_ids: (batch_size, sequence_length)
+
+        Returns:
+            input_ids: (batch_size, sequence_length)
+            attention_mask: (batch_size, sequence_length)
+            encoder_hidden_states: (batch_size, sequence_length, embedding_dim)
+        """
+        attention_mask = input_ids.ne(self.tokenizer.pad_token_id).long()
+        past = past or past_key_values
+        if past is not None:
+            input_ids = input_ids[:, -1:]
+        output = {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "past_key_values": past,
+            "use_cache": use_cache,
+            "encoder_hidden_states": encoder_outputs.last_hidden_state,
+        }
+        return output
 
     def forward(
         self,
@@ -374,29 +379,11 @@ class BARTDecoder(nn.Module):
 
 
 class PDF_2_TEX_Config(PretrainedConfig):
-    r"""
-    This is the configuration class to store the configuration of a [`PDF_2_TEX_Model`]. It is used to
-    instantiate a Nougat model according to the specified arguments, defining the model architecture
 
-    Args:
-        input_size:
-            Input image size (canvas size) of Nougat.encoder, SwinTransformer in this codebase
-        align_long_axis:
-            Whether to rotate image if height is greater than width
-        window_size:
-            Window size of Nougat.encoder, SwinTransformer in this codebase
-        encoder_layer:
-            Depth of each Nougat.encoder Encoder layer, SwinTransformer in this codebase
-        decoder_layer:
-            Number of hidden layers in the Nougat.decoder, such as BART
-        max_position_embeddings
-            Trained max position embeddings in the Nougat decoder,
-            if not specified, it will have same value with max_length
-        max_length:
-            Max position embeddings(=maximum sequence length) you want to train
-        name_or_path:
-            Name of a pretrained model name either registered in huggingface.co. or saved in local
     """
+        configurations for PDF_2_TEX
+    """
+    
     model_type = "pdf_2_tex"
 
     def __init__(
@@ -407,7 +394,7 @@ class PDF_2_TEX_Config(PretrainedConfig):
         encoder_layer: List[int] = [2, 2, 14, 2],
         decoder_layer: int = 10,
         max_position_embeddings: int = None,
-        max_length: int = 25000,
+        max_length: int = 4096,
         name_or_path: Union[str, bytes, os.PathLike] = "",
         patch_size: int = 4,
         embed_dim: int = 128,
@@ -432,7 +419,6 @@ class PDF_2_TEX_Config(PretrainedConfig):
         self.hidden_dimension = hidden_dimension
 
 
-
 class RunningVarTorch:
     def __init__(self, L=15, norm=False):
         self.values = None
@@ -455,6 +441,7 @@ class RunningVarTorch:
             return torch.var(self.values, 1) / self.values.shape[1]
         else:
             return torch.var(self.values, 1)
+
 
 class StoppingCriteriaScores(StoppingCriteria):
     def __init__(self, threshold: float = 0.015, window_size: int = 200):
@@ -507,10 +494,7 @@ def subdiv(l, b=10):
 
 class PDF_2_TEX_Model(PreTrainedModel):
     r"""
-    Nougat: Neural Optical UnderstandinG for Academic documents.
-    The encoder converts an image of an academic document into a series of embeddings.
-    Then, the decoder generates a sequence of tokens based on encoder's output.
-    This sequence can be translated into a structured markup language format.
+    PDF_2_TEX model based on SwinTransformer and Multilingual BART (MBART) model for LaTeX generation. 
     """
     config_class = PDF_2_TEX_Config
     base_model_prefix = "pdf_2_tex"
@@ -652,7 +636,7 @@ class PDF_2_TEX_Model(PreTrainedModel):
             small_var = np.where(varvar < 0.045)[0]
             if early_stopping and len(small_var) > 1:
                 if np.all(np.diff(small_var) < 2):
-                    idx = int(min(max(small_var[0], 1) * 1.08 + minlen, 24999))         ## ***Change in parameter
+                    idx = int(min(max(small_var[0], 1) * 1.08 + minlen, 4095))
                     if idx / N > 0.9:  # at most last bit
                         output["repeats"].append(None)
                         continue
@@ -669,15 +653,13 @@ class PDF_2_TEX_Model(PreTrainedModel):
         output["repetitions"] = self.decoder.tokenizer.batch_decode(
             output["repetitions"], skip_special_tokens=True
         )
-        # output["predictions"] = postprocess(
-        #     self.decoder.tokenizer.batch_decode(
-        #         output["sequences"], skip_special_tokens=True
-        #     ),
-        #     markdown_fix=False,
-        # )
-        output["predictions"] = self.decoder.tokenizer.batch_decode(        ### ***Postprocessing remaining
-            output["sequences"], skip_special_tokens=True
+        output["predictions"] = postprocess(
+            self.decoder.tokenizer.batch_decode(
+                output["sequences"], skip_special_tokens=True
+            ),
+            markdown_fix=False,
         )
+
         if return_attentions:
             output["attentions"] = {
                 "self_attentions": decoder_output.decoder_attentions,
@@ -694,14 +676,10 @@ class PDF_2_TEX_Model(PreTrainedModel):
         **kwargs,
     ):
         r"""
-        Instantiate a pretrained nougat model from a pre-trained model configuration
-
-        Args:
-            model_path:
-                Name of a pretrained model name either registered in huggingface.co. or saved in local.
+        Instantiate a PDF_2_TEX model from a pretrained model.
         """
         model = super(PDF_2_TEX_Model, cls).from_pretrained(
-            model_path, *model_args, **kwargs           ### ***Pretrained model to be replaced
+            model_path, *model_args, **kwargs
         )
 
         # truncate or interpolate position embeddings of decoder

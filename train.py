@@ -1,19 +1,14 @@
 import os
-
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
-# os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:1024"
-
-
 import torch
-
-
+os.environ["CUDA_VISIBLE_DEVICES"]="1,2"
+from pdf_2_tex import pdf_2_tex_Dataset
+from lightning_module import PDF_2_TEX_DataPLModule, PDF_2_TEX_ModelPLModule
 import argparse
 import datetime
 from os.path import basename
 from pathlib import Path
 import lightning.pytorch as pl
-from sconf import Config
+
 from lightning.pytorch.callbacks import (
     LearningRateMonitor,
     ModelCheckpoint,
@@ -24,39 +19,7 @@ from lightning.pytorch.loggers.tensorboard import TensorBoardLogger
 from lightning.pytorch.plugins import CheckpointIO
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.utilities import rank_zero_only
-
-
-try:
-    import wandb
-    from lightning.pytorch.loggers import WandbLogger as Logger
-except ModuleNotFoundError:
-    from lightning.pytorch.loggers.tensorboard import TensorBoardLogger as Logger
-
-import logging
-
-
-from pdf_2_tex import pdf_2_tex_Dataset
-from lightning_module import PDF_2_TEX_DataPLModule, PDF_2_TEX_ModelPLModule
-
-
-
-"""def train(config):
-    pl.seed_everything(config.get("seed", 42), workers=True)
-    
-    model_module = PDF_2_TEX_ModelPLModule(config)
-    data_module = PDF_2_TEX_DataPLModule(config)
-
-    datasets = {"train": [], "validation": []}
-    for i, dataset_path in enumerate(config.dataset_paths):
-        for split in ["train", "validation"]:
-            datasets[split].append(
-                pdf_2_tex_Dataset(
-                    dataset_path=dataset_path,
-                    nougat_model=model_module.model,
-                    max_length=config.max_length,
-                    split=split,
-                )
-            )"""
+from sconf import Config
 
 
 class CustomCheckpointIO(CheckpointIO):
@@ -154,7 +117,7 @@ def save_config_file(config, path):
 
 def train(config):
     """
-    Train a Nougat model using the provided configuration.
+    Train a Pdf_2_tex model using the provided configuration.
 
     Args:
         `config` (dict): A dictionary containing configuration settings for training.
@@ -162,11 +125,13 @@ def train(config):
     pl.seed_everything(config.get("seed", 42), workers=True)
 
     model_module = PDF_2_TEX_ModelPLModule(config)
+    
     data_module = PDF_2_TEX_DataPLModule(config)
-
+    
     # add datasets to data_module
     datasets = {"train": [], "validation": []}
     for i, dataset_path in enumerate(config.dataset_paths):
+        
         for split in ["train", "validation"]:
             datasets[split].append(
                 pdf_2_tex_Dataset(
@@ -189,7 +154,7 @@ def train(config):
     custom_ckpt = CustomCheckpointIO()
 
     # if not config.debug:
-    #     logger = Logger(config.exp_name, project="PDF_2_TEX", config=dict(config))
+    #     logger = Logger(config.exp_name, project="Pdf_2_tex", config=dict(config))
     # else:
     #     logger = TensorBoardLogger(
     #         save_dir=config.result_path,
@@ -210,7 +175,7 @@ def train(config):
         limit_val_batches=config.val_batches,
         gradient_clip_val=config.gradient_clip_val,
         log_every_n_steps=15,
-        precision="bf16-mixed",
+        precision="16-mixed",
         num_sanity_val_steps=0,
         # logger=logger,
         callbacks=[
@@ -220,7 +185,6 @@ def train(config):
             GradientAccumulationScheduler({0: config.accumulate_grad_batches}),
         ],
     )
-
     trainer.fit(
         model_module,
         data_module,
@@ -252,3 +216,4 @@ if __name__ == "__main__":
         config, Path(config.result_path) / config.exp_name / config.exp_version
     )
     train(config)
+    print("Training Complete!!!")

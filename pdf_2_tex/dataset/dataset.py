@@ -5,7 +5,6 @@ from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
-
 from pathlib import Path
 from functools import partial
 import random
@@ -16,7 +15,6 @@ import pypdf
 import orjson
 import jsonlines     
 import fitz  # PyMuPDF
-
 from transformers.modeling_utils import PreTrainedModel
 
 class pdf_2_tex_Dataset(Dataset):
@@ -35,8 +33,8 @@ class pdf_2_tex_Dataset(Dataset):
         self.split = split
         self.pdf_path = []
         self.latex_path = []    
-
-        with jsonlines.open(self.dataset_path) as reader:
+        split_path = Path(dataset_path).parent / f"{split}.jsonl"
+        with jsonlines.open(split_path) as reader:
             for line_number, line in enumerate(reader, start=1):
                 self.pdf_path.append(line['pdf'])
                 self.latex_path.append(line['latex'])

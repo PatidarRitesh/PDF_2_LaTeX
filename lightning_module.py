@@ -1,9 +1,3 @@
-"""
-Donut
-Copyright (c) 2022-present NAVER Corp.
-MIT License
-Copyright (c) Meta Platforms, Inc. and affiliates.
-"""
 import math
 import random
 from pathlib import Path
@@ -17,7 +11,7 @@ from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
 
 from pdf_2_tex import PDF_2_TEX_Config, PDF_2_TEX_Model
-from pdf_2_tex.metrics import get_metrics   ## *** Error in metrics.py
+from pdf_2_tex.metrics import get_metrics
 
 
 class PDF_2_TEX_ModelPLModule(pl.LightningModule):
@@ -26,6 +20,7 @@ class PDF_2_TEX_ModelPLModule(pl.LightningModule):
         self.validation_step_outputs = []
         self.config = config
         if self.config.get("model_path", False):
+            print("Inside if of lightning_module.py")
             self.model = PDF_2_TEX_Model.from_pretrained(
                 self.config.model_path,
                 input_size=self.config.input_size,
@@ -41,6 +36,7 @@ class PDF_2_TEX_ModelPLModule(pl.LightningModule):
                 ignore_mismatched_sizes=True,
             )
         else:
+            print("Inside ELSE of lightning_module.py")
             self.model = PDF_2_TEX_Model(
                 config=PDF_2_TEX_Config(
                     input_size=self.config.input_size,
@@ -209,6 +205,9 @@ class PDF_2_TEX_DataPLModule(pl.LightningDataModule):
         self.g.manual_seed(self.config.seed)
 
     def train_dataloader(self):
+        # print(type(self.train_datasets))
+        # print(type(self.train_datasets[0]))
+        # print((self.train_datasets[0]))
         loaders = [
             DataLoader(
                 torch.utils.data.ConcatDataset(self.train_datasets),
