@@ -8,9 +8,9 @@ train_batch_sizes: [1]
 num_workers: 8
 val_batch_sizes: [1]
 val_batches: 1
-input_size: [896,672]
-max_length: 4096
-max_position_embeddings: 4096
+input_size: [224,224]
+max_length: 6300
+max_position_embeddings: 6300
 accumulate_grad_batches: 3
 window_size: 7
 patch_size: 4
@@ -18,7 +18,7 @@ embed_dim: 128
 hidden_dimension: 1024
 num_heads: [4, 8, 16, 32]
 encoder_layer: [2, 2, 14, 2]
-decoder_layer: 10
+decoder_layer: 5
 align_long_axis: False
 num_nodes: 1
 seed: 25

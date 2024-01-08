@@ -1,6 +1,7 @@
 import os
 import torch
-os.environ["CUDA_VISIBLE_DEVICES"]="1,2"
+# os.environ["TOKENIZERS_PARALLELISM"] = "True"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
 from pdf_2_tex import pdf_2_tex_Dataset
 from lightning_module import PDF_2_TEX_DataPLModule, PDF_2_TEX_ModelPLModule
 import argparse
@@ -52,6 +53,8 @@ class CustomCheckpointIO(CheckpointIO):
             `storage_options` (dict, optional): Additional storage options.
         """
         torch.save(checkpoint, path)
+        # model_state_dict = checkpoint.get("state_dict", {})
+        # torch.save(model_state_dict, path / "pytorch_model.bin")
 
     def load_checkpoint(self, path, storage_options=None):
         """
@@ -125,6 +128,9 @@ def train(config):
     pl.seed_everything(config.get("seed", 42), workers=True)
 
     model_module = PDF_2_TEX_ModelPLModule(config)
+    # print("Model created !!", model_module.model)
+    # input("Press Enter to continue...")
+    
     
     data_module = PDF_2_TEX_DataPLModule(config)
     
@@ -143,12 +149,16 @@ def train(config):
             )
     data_module.train_datasets = datasets["train"]
     data_module.val_datasets = datasets["validation"]
+    print("Dataset created !!")
 
     lr_callback = LearningRateMonitor(logging_interval="step")
 
     checkpoint_callback = ModelCheckpoint(
         save_last=True,
         dirpath=Path(config.result_path) / config.exp_name / config.exp_version,
+    
+       
+
     )
     grad_norm_callback = GradNormCallback()
     custom_ckpt = CustomCheckpointIO()
@@ -162,6 +172,7 @@ def train(config):
     #         version=config.exp_version,
     #         default_hp_metric=False,
     #     )
+
     trainer = pl.Trainer(
         num_nodes=config.get("num_nodes", 1),
         devices="auto",
@@ -175,8 +186,10 @@ def train(config):
         limit_val_batches=config.val_batches,
         gradient_clip_val=config.gradient_clip_val,
         log_every_n_steps=15,
-        precision="16-mixed",
+        # precision="16-mixed",
+        precision=16,    # Ritesh chenges
         num_sanity_val_steps=0,
+      
         # logger=logger,
         callbacks=[
             lr_callback,
@@ -185,6 +198,7 @@ def train(config):
             GradientAccumulationScheduler({0: config.accumulate_grad_batches}),
         ],
     )
+    print("Trainer is ready")
     trainer.fit(
         model_module,
         data_module,

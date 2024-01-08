@@ -21,12 +21,16 @@ def get_requirements(file_path:str)->List[str]:
 setup(
     name="pdf_2_tex",
     version="0.0.1",
-    author="Ritesh " ,
-    author2="Husain",
+    author="Ritesh Patidar" ,
+    author2="Husain Malwat",
     author_email="riteshpatidar2499@gmail.com",
     author2_email="husainmalwat@iitgn.ac.in",
     description="A tool to convert pdf to latex",
     long_description="",
-    packages=find_packages(),
+    packages=find_packages(
+         exclude=[
+            "result",
+        ]
+    ),
     install_requires=get_requirements("requirements.txt")
 )

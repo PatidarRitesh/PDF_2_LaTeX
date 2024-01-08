@@ -37,6 +37,7 @@ class PDF_2_TEX_ModelPLModule(pl.LightningModule):
             )
         else:
             print("Inside ELSE of lightning_module.py")
+            print("--------------------------------------")
             self.model = PDF_2_TEX_Model(
                 config=PDF_2_TEX_Config(
                     input_size=self.config.input_size,
@@ -223,11 +224,15 @@ class PDF_2_TEX_DataPLModule(pl.LightningDataModule):
         return loaders
 
     def val_dataloader(self):
+        # print(self.val_datasets)
+        # print(len(self.val_datasets))
         loaders = [
             DataLoader(
                 torch.utils.data.ConcatDataset(self.val_datasets),
                 batch_size=self.val_batch_sizes[0],
                 pin_memory=True,
+                # num_workers=self.config.num_workers,
+                generator=self.g,  # added by Ritesh
                 shuffle=True,
                 collate_fn=self.ignore_none_collate,
             )
