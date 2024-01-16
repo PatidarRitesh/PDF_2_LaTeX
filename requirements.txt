@@ -1,3 +1,4 @@
+requests
 numpy
 pandas
 opencv-python-headless
@@ -5,7 +6,7 @@ transformers==4.25.1
 timm==0.5.4
 albumentations>=1.0.0
 pypdf
-lightning>=2.0.0,<2022
+# lightning>=2.0.0,<2022
 sconf>=0.2.3
 nltk
 fitz
@@ -13,5 +14,11 @@ jsonlines
 pathlib
 Pillow
 PyMuPDF
+Levenshtein
+matplotlib
+orjson
+Logger
+wandb
+pytorch-lightning
 # -e .
 

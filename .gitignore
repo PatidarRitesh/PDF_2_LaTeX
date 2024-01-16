@@ -30,6 +30,7 @@ share/python-wheels/
 *.egg
 MANIFEST
 Experiments/dataloader.json
+wandb/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

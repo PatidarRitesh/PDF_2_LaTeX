@@ -1,7 +1,8 @@
 import os
-import torch
+
 # os.environ["TOKENIZERS_PARALLELISM"] = "True"
-os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_VISIBLE_DEVICES"]="3"
+import torch
 from pdf_2_tex import pdf_2_tex_Dataset
 from lightning_module import PDF_2_TEX_DataPLModule, PDF_2_TEX_ModelPLModule
 import argparse
@@ -15,13 +16,26 @@ from lightning.pytorch.callbacks import (
     ModelCheckpoint,
     Callback,
     GradientAccumulationScheduler,
+    # QuantizationAwareTraining
 )
 from lightning.pytorch.loggers.tensorboard import TensorBoardLogger
 from lightning.pytorch.plugins import CheckpointIO
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.utilities import rank_zero_only
 from sconf import Config
+# from pytorch_lightning.callbacks import QuantizationAwareTraining
+import torch.quantization
 
+try:
+    import wandb
+    from lightning.pytorch.loggers import WandbLogger as Logger
+except ModuleNotFoundError:
+    from lightning.pytorch.loggers.tensorboard import TensorBoardLogger as Logger
+
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 class CustomCheckpointIO(CheckpointIO):
     """
@@ -133,6 +147,25 @@ def train(config):
     
     
     data_module = PDF_2_TEX_DataPLModule(config)
+
+    # #____________________ ---------------Dynamic Quantization-----------------------____________________#
+
+    # # Assuming your model is already defined in model_module.model
+    # quantized_model = torch.quantization.quantize_dynamic(
+    # model_module.model, 
+    # {torch.nn.Linear},  # Specify the set of layers to quantize
+    # dtype=torch.qint8
+    # )
+    # model_module.model = quantized_model  # Replace the original model with the quantized one
+
+# ---------------------------------------------------------------------------------------------#
+    # # Apply dynamic quantization on CPU
+    # quantized_model = torch.quantization.quantize_dynamic(
+    #     model_module.model.cpu(),  # Move the model to CPU for quantization
+    #     {torch.nn.Linear},  # Specify the set of layers to quantize
+    #     dtype=torch.qint8
+    # )
+    # model_module.model = quantized_model.to(device="cuda")  # Move the quantized model back to GPU
     
     # add datasets to data_module
     datasets = {"train": [], "validation": []}
@@ -163,16 +196,24 @@ def train(config):
     grad_norm_callback = GradNormCallback()
     custom_ckpt = CustomCheckpointIO()
 
-    # if not config.debug:
-    #     logger = Logger(config.exp_name, project="Pdf_2_tex", config=dict(config))
-    # else:
-    #     logger = TensorBoardLogger(
-    #         save_dir=config.result_path,
-    #         name=config.exp_name,
-    #         version=config.exp_version,
-    #         default_hp_metric=False,
-    #     )
+    if not config.debug:
+        logger = Logger(config.exp_name, project="Pdf_2_tex", config=dict(config))
+    else:
+        logger = TensorBoardLogger(
+            save_dir=config.result_path,
+            name=config.exp_name,
+            version=config.exp_version,
+            default_hp_metric=False,
+        )
 
+#----------------- Quantization Aware Training -----------------#
+
+    # qcb = QuantizationAwareTraining(
+    # observer_type='histogram',
+    # modules_to_fuse=[(f'layer_{i}', f'layer_{i}a') for i in range(2)],
+    # input_compatible=False,
+# )
+#--------------------------------------------------------------#
     trainer = pl.Trainer(
         num_nodes=config.get("num_nodes", 1),
         devices="auto",
@@ -190,12 +231,13 @@ def train(config):
         precision=16,    # Ritesh chenges
         num_sanity_val_steps=0,
       
-        # logger=logger,
+        logger=logger,
         callbacks=[
             lr_callback,
             grad_norm_callback,
             checkpoint_callback,
             GradientAccumulationScheduler({0: config.accumulate_grad_batches}),
+            # qcb,
         ],
     )
     print("Trainer is ready")
