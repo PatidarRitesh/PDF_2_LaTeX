@@ -1,8 +1,11 @@
 import os
 
 # os.environ["TOKENIZERS_PARALLELISM"] = "True"
-os.environ["CUDA_VISIBLE_DEVICES"]="3"
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
+# os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:<enter-size-here>"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
 import torch
+# torch.cuda.empty_cache()
 from pdf_2_tex import pdf_2_tex_Dataset
 from lightning_module import PDF_2_TEX_DataPLModule, PDF_2_TEX_ModelPLModule
 import argparse
@@ -20,11 +23,11 @@ from lightning.pytorch.callbacks import (
 )
 from lightning.pytorch.loggers.tensorboard import TensorBoardLogger
 from lightning.pytorch.plugins import CheckpointIO
-from lightning.pytorch.plugins.environments import SLURMEnvironment
+# from lightning.pytorch.plugins.environments import SLURMEnvironment
 from lightning.pytorch.utilities import rank_zero_only
 from sconf import Config
 # from pytorch_lightning.callbacks import QuantizationAwareTraining
-import torch.quantization
+# import torch.quantization
 
 try:
     import wandb

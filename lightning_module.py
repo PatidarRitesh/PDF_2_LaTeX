@@ -86,13 +86,17 @@ class PDF_2_TEX_ModelPLModule(pl.LightningModule):
             image_tensors=image_tensors,
             return_attentions=False,
         )["predictions"]
+
+        print("preds", preds)
         gts = self.model.decoder.tokenizer.batch_decode(
             markdown, skip_special_tokens=True
         )
         metrics = get_metrics(gts, preds, pool=False)
+        print("Inside validation_step of lightning_module.py")
         scores = {
             "val/" + key: sum(values) / len(values) for key, values in metrics.items()
         }
+        print("scores", scores)
         self.validation_step_outputs.append(scores)
         return scores
 
@@ -232,7 +236,7 @@ class PDF_2_TEX_DataPLModule(pl.LightningDataModule):
                 batch_size=self.val_batch_sizes[0],
                 pin_memory=True,
                 # num_workers=self.config.num_workers,
-                generator=self.g,  # added by Ritesh
+                # generator=self.g,  # added by Ritesh
                 shuffle=True,
                 collate_fn=self.ignore_none_collate,
             )

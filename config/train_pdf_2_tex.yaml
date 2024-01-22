@@ -1,8 +1,8 @@
 resume_from_checkpoint_path: null
 result_path: "result"
 model_path: null
-dataset_paths: ["/mnt/NAS/patidarritesh/Pdf_2_LaTeX/pdf_2_tex/dataset/root/train.jsonl"]
-tokenizer: "pdf_2_tex/dataset/tokenizer.json"
+dataset_paths: ["/mnt/NAS/patidarritesh/Pdf_2_LaTeX/pdf_2_tex/dataset/root2/train.jsonl"]
+tokenizer: "dataset/tokenizer.json"
 exp_name: "pdf_2_tex"
 train_batch_sizes: [1]
 num_workers: 8

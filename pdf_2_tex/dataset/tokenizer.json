@@ -1,13 +1,13 @@
 { "version": "1.0",
 "truncation": {
   "direction": "Right",
-  "max_length": 4096,
+  "max_length": 6000,
   "strategy": "LongestFirst",
   "stride": 0
 },
 "padding": {
   "strategy": {
-    "Fixed": 4096
+    "Fixed": 6000
   },
   "direction": "Right",
   "pad_to_multiple_of": null,

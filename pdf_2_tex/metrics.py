@@ -35,6 +35,8 @@ def compute_metrics(pred, gt, minlen=4):
     metrics["precision"] = nltk.scores.precision(reference, hypothesis)
     metrics["recall"] = nltk.scores.recall(reference, hypothesis)
     metrics["f_measure"] = nltk.scores.f_measure(reference, hypothesis)
+    print("Inside compute_metrics")
+    print("metrics", metrics)
     return metrics
 
 
@@ -78,7 +80,11 @@ def split_text(pages: List[str]):
 
 
 def get_metrics(gt: List[str], pred: List[str], pool: bool = True):
+    print("Inside get_metrics")
+    print("gt", gt)
+    print("pred", pred)
     metrics = defaultdict(list)
+    
     if pool:
         with Pool() as p:
             _metrics = p.starmap(compute_metrics, iterable=zip(pred, gt))
@@ -90,19 +96,44 @@ def get_metrics(gt: List[str], pred: List[str], pool: bool = True):
     return dict(metrics)
 
 
+# if __name__ == "__main__":
+#     args = get_parser()
+#     for name, entries in zip(["gt", "pred"], [args.gt, args.pred]):
+#         full: Path = args.json.parent / (args.json.stem + "_" + name + "_full.mmd")
+#         full.write_text("\n\n------------------\n\n".join(entries))
+#     for i, (gt, pr) in enumerate(zip(split_text(args.gt), split_text(args.pred))):
+#         sub = ["Text", "Math", "Tables"][i]
+#         prpath: Path = args.json.parent / (
+#             args.json.stem + "_pred_" + sub.lower() + ".mmd"
+#         )
+#         prpath.write_text("\n\n------------------\n\n".join(pr))
+#         gtpath: Path = args.json.parent / (
+#             args.json.stem + "_gt_" + sub.lower() + ".mmd"
+#         )
+#         gtpath.write_text("\n\n------------------\n\n".join(gt))
+#         print("Results for", sub)
+
+#         metrics = get_metrics(gt, pr)
+#         print({key: sum(values) / len(values) for key, values in metrics.items()})
+
+
 if __name__ == "__main__":
     args = get_parser()
+
+    # Save ground truth and prediction entries to .tex files
     for name, entries in zip(["gt", "pred"], [args.gt, args.pred]):
-        full: Path = args.json.parent / (args.json.stem + "_" + name + "_full.mmd")
+        full: Path = args.json.parent / (args.json.stem + "_" + name + "_full.tex")
         full.write_text("\n\n------------------\n\n".join(entries))
+
+    # Split text and save to .tex files for each section (Text, Math, Tables)
     for i, (gt, pr) in enumerate(zip(split_text(args.gt), split_text(args.pred))):
         sub = ["Text", "Math", "Tables"][i]
         prpath: Path = args.json.parent / (
-            args.json.stem + "_pred_" + sub.lower() + ".mmd"
+            args.json.stem + "_pred_" + sub.lower() + ".tex"
         )
         prpath.write_text("\n\n------------------\n\n".join(pr))
         gtpath: Path = args.json.parent / (
-            args.json.stem + "_gt_" + sub.lower() + ".mmd"
+            args.json.stem + "_gt_" + sub.lower() + ".tex"
         )
         gtpath.write_text("\n\n------------------\n\n".join(gt))
         print("Results for", sub)
