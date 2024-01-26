@@ -14,7 +14,7 @@ from tqdm import tqdm
 from pdf_2_tex import pdf_2_tex_model
 from pdf_2_tex.metrics import compute_metrics
 from pdf_2_tex.utils.checkpoint import get_checkpoint
-from pdf_2_tex.dataset import pdf_2_tex_Dataset
+from pdf_2_tex.dataset import test_dataset
 from pdf_2_tex.utils.device import move_to_device
 from lightning_module import PDF_2_TEX_DataPLModule
 
@@ -32,7 +32,7 @@ def test(args):
     predictions = []
     ground_truths = []
     metrics = defaultdict(list)
-    dataset = pdf_2_tex_Dataset(
+    dataset = test_dataset(
         dataset_path=args.dataset,
         nougat_model=pretrained_model,
         max_length=pretrained_model.config.max_length,
@@ -51,7 +51,7 @@ def test(args):
     for idx, sample in tqdm(enumerate(dataloader), total=len(dataloader)):
         if sample is None:
             continue
-        image_tensors, decoder_input_ids, _ = sample
+        image_tensors, decoder_input_ids, _, latex_path = sample
         if image_tensors is None:
             return
         if len(predictions) >= args.num_samples:
@@ -88,7 +88,13 @@ def test(args):
         scores["ground_truths"] = ground_truths
         with open(args.save_path, "w") as f:
             json.dump(scores, f)
-
+    
+    file_path = os.path.join('./predictions',latex_path )
+    
+    # Write the LaTeX content to the file
+    with open(file_path, 'w', encoding='utf-8') as tex_file:
+        tex_file.write(predictions)
+    
     return predictions
 
 

@@ -163,6 +163,73 @@ class SwinEncoder(nn.Module):
     #         ])
     #         return transform(img)
 
+    # def prepare_input(self, pdf_path:str, random_padding: bool = False):
+    #     self.input_tensor = None
+    #     if pdf_path is None:
+    #         return
+    #     input_size= [896,672]
+    #     # Convert PDF to images using PyMuPDF
+    #     doc = fitz.open(pdf_path)
+    #     i=0
+    #     for page_number in range(len(doc)):
+    #         if i==4:
+    #             break
+    #         page = doc[page_number]
+    #         image = page.get_pixmap()
+    #         # Convert Pixmap to PIL Image
+    #         img = Image.frombytes("RGB", [image.width, image.height], image.samples)
+
+    #         # crop margins
+    #         try:
+    #             img = self.crop_margin(img.convert("RGB"))
+    #         except OSError:
+    #             # might throw an error for broken files
+    #             return
+    #         if img.height == 0 or img.width == 0:
+    #             return
+    #         if self.align_long_axis and (
+    #             (input_size[0] > input_size[1] and img.width > img.height)
+    #             or (input_size[0] < input_size[1] and img.width < img.height)
+    #         ):
+    #             img = rotate(img, angle=-90, expand=True)
+    #         img = resize(img, min(input_size))
+    #         img.thumbnail((input_size[1], input_size[0]))
+    #         delta_width = input_size[1] - img.width
+    #         delta_height = input_size[0] - img.height
+    #         if random_padding:
+    #             pad_width = np.random.randint(low=0, high=delta_width + 1)
+    #             pad_height = np.random.randint(low=0, high=delta_height + 1)
+    #         else:
+    #             pad_width = delta_width // 2
+    #             pad_height = delta_height // 2
+    #         padding = (
+    #             pad_width,
+    #             pad_height,
+    #             delta_width - pad_width,
+    #             delta_height - pad_height,
+    #         )
+    #         padded_img = ImageOps.expand(img, padding)
+
+    #         # resize the image (224,224)
+    #         # padded_img= padded_img.resize((448,224))
+    #         page_tensor = self.to_tensor(padded_img)
+    #         # page_tensor = self.to_tensor(ImageOps.expand(img, padding))
+
+    #         if self.input_tensor is None:
+    #            self.input_tensor = page_tensor
+    #         else:
+    #             self.input_tensor = torch.cat([self.input_tensor, page_tensor], dim=2)
+    #         i+=1
+
+    #     target_shape = (3, self.input_size[0], self.input_size[1])
+    #     original_shape = self.input_tensor.shape
+    #     padding = [0, target_shape[2] - original_shape[2]]
+
+    #     # Apply padding using torch.nn.functional.pad
+    #     self.input_tensor = torch.nn.functional.pad(self.input_tensor, padding)
+
+    #     return self.input_tensor
+
     def prepare_input(self, pdf_path:str, random_padding: bool = False):
         self.input_tensor = None
         if pdf_path is None:
@@ -172,7 +239,7 @@ class SwinEncoder(nn.Module):
         doc = fitz.open(pdf_path)
         i=0
         for page_number in range(len(doc)):
-            if i==5:
+            if i==4:
                 break
             page = doc[page_number]
             image = page.get_pixmap()
@@ -211,24 +278,29 @@ class SwinEncoder(nn.Module):
             padded_img = ImageOps.expand(img, padding)
 
             # resize the image (224,224)
-            padded_img= padded_img.resize((448,224))
+            # padded_img= padded_img.resize((224,224))
             page_tensor = self.to_tensor(padded_img)
             # page_tensor = self.to_tensor(ImageOps.expand(img, padding))
-
+            # print("Page Tensor: ", page_tensor.shape)
             if self.input_tensor is None:
                self.input_tensor = page_tensor
             else:
-                self.input_tensor = torch.cat([self.input_tensor, page_tensor], dim=2)
+                self.input_tensor = torch.cat([self.input_tensor, page_tensor], dim=1)
             i+=1
 
+        # VERTICAL PADDING added
         target_shape = (3, self.input_size[0], self.input_size[1])
-        original_shape = self.input_tensor.shape
-        padding = [0, target_shape[2] - original_shape[2]]
+        padding_needed = (target_shape[1] - self.input_tensor.size(1))
+        self.input_tensor = torch.nn.functional.pad(self.input_tensor, (0, 0,0, padding_needed))
 
-        # Apply padding using torch.nn.functional.pad
-        self.input_tensor = torch.nn.functional.pad(self.input_tensor, padding)
 
+        # img = tensor_to_image(self.input_tensor, '/home/husainmalwat/PDF_2_LaTeX/img_test_2.png')
+
+        # print("final Input Tensor: ", )
         return self.input_tensor
+
+
+
 
 class BARTDecoder(nn.Module):
     """
