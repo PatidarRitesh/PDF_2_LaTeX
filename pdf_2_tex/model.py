@@ -141,6 +141,7 @@ class SwinEncoder(nn.Module):
     #         return train_transform
     #     else:
     #         return test_transform
+  
     def to_tensor(self, img: Image.Image):
         if self.training:
             
@@ -288,12 +289,12 @@ class SwinEncoder(nn.Module):
                 self.input_tensor = torch.cat([self.input_tensor, page_tensor], dim=1)
             i+=1
 
-        # VERTICAL PADDING added
-        target_shape = (3, self.input_size[0], self.input_size[1])
-        padding_needed = (target_shape[1] - self.input_tensor.size(1))
-        self.input_tensor = torch.nn.functional.pad(self.input_tensor, (0, 0,0, padding_needed))
+        # ---------------------------------------------------VERTICAL PADDING added--------------------------------------
+        # target_shape = (3, self.input_size[0], self.input_size[1])
+        # padding_needed = (target_shape[1] - self.input_tensor.size(1))
+        # self.input_tensor = torch.nn.functional.pad(self.input_tensor, (0, 0,0, padding_needed))
 
-
+        #------------------------------------------------------------------------------------------------------------------
         # img = tensor_to_image(self.input_tensor, '/home/husainmalwat/PDF_2_LaTeX/img_test_2.png')
 
         # print("final Input Tensor: ", )
@@ -625,6 +626,7 @@ class PDF_2_TEX_Model(PreTrainedModel):
             image_tensors: (batch_size, num_channels, height, width)
             decoder_input_ids: (batch_size, sequence_length, embedding_dim)
         """
+        
         encoder_outputs = self.encoder(image_tensors)
         decoder_outputs = self.decoder(
             input_ids=decoder_input_ids[:, :-1].contiguous(),

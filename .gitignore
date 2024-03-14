@@ -35,6 +35,7 @@ wandb/
 pdf_2_tex/dataset/root/
 pdf_2_tex/dataset/root1/
 pdf_2_tex/dataset/root2/
+pdf_2_tex/dataset/root_3/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
