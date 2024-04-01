@@ -172,8 +172,7 @@
   {
     "id": 17,
     "content": "[START_AMINO]",
-    "single_word": false,
-    "lstrip": false,
+    "single_word": false, 
     "rstrip": false,
     "normalized": false,
     "special": true
