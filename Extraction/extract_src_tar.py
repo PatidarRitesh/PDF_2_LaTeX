@@ -9,7 +9,7 @@ def extract_tar_files(src_folder, dest_folder):
     os.makedirs(dest_folder, exist_ok=True)
 
     # List all files in the source folder
-    for filename in os.listdir(src_folder):
+    for filename in os.listdir(src_folder): 
         file_path = os.path.join(src_folder, filename)
 
         # Check if the file is a .tar.gz file

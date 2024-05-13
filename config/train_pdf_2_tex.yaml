@@ -1,4 +1,4 @@
-resume_from_checkpoint_path: "/mnt/NAS/patidarritesh/PDF_2_LaTeX/result/pdf_2_tex/20240308_234848/last.ckpt"
+resume_from_checkpoint_path: '/mnt/NAS/patidarritesh/PDF_2_LaTeX/result/pdf_2_tex/20240510_132953/last.ckpt'
 result_path: "result"
 model_path: null
 dataset_paths: ["/mnt/NAS/patidarritesh/PDF_2_LaTeX/pdf_2_tex/dataset/root/train.jsonl"]
@@ -22,13 +22,13 @@ decoder_layer: 5
 align_long_axis: False
 num_nodes: 1
 seed: 25
-lr: 3e-4
+lr: 3e-6
 min_lr: 7.5e-6
 lr_step: 16
 gamma: 0.9996
 warmup_steps: 250
-num_training_samples_per_epoch: 10000
-max_epochs: 70
+num_training_samples_per_epoch: 31435
+max_epochs: 90
 max_steps: -1
 val_check_interval: null
 check_val_every_n_epoch: 1

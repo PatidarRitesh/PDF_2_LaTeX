@@ -121,6 +121,20 @@ class GradNormCallback(Callback):
         return total_norm
 
     def on_after_backward(self, trainer, model):
+        # for name, param in model.named_parameters():
+        #     if param.grad is not None:
+        #         gradient_type = param.grad.dtype
+        #         with open("/mnt/NAS/patidarritesh/PDF_2_LaTeX/grad_16_precision.txt", "a") as f:
+        #             f.write(f"Parameter {gradient_type}\n")
+        #         # print(f"Parameter '{name}' gradient type:", gradient_type)
+        #     else:
+        #         with open("/mnt/NAS/patidarritesh/PDF_2_LaTeX/grad_16_precision.txt", "a") as f:
+        #             f.write(f"Parameter '{gradient_type}' has no gradient.\n")
+                # print(f"Parameter '{name}' has no gradient.")
+        # save print to a text file
+        # with open("/mnt/NAS/patidarritesh/PDF_2_LaTeX/grad_norm_zeroth_epoch.txt", "a") as f:
+        #     f.write(f"grad: {self.gradient_norm(model)}\n")
+        # print("grad: ",self.gradient_norm(model), (self.gradient_norm(model).dtype))
         model.log("train/grad_norm", self.gradient_norm(model))
 
 
@@ -133,7 +147,6 @@ def save_config_file(config, path):
     with open(save_path, "w") as f:
         f.write(config.dumps(modified_color=None, quote_str=True))
         print(f"Config is saved at {save_path}")
-
 
 def train(config):
     """
@@ -231,7 +244,7 @@ def train(config):
         gradient_clip_val=config.gradient_clip_val,
         log_every_n_steps=15,
         # precision="16-mixed",
-        precision=16,    # Ritesh chenges
+        precision="16",    # Ritesh chenges
         num_sanity_val_steps=0,
       
         logger=logger,
@@ -243,6 +256,22 @@ def train(config):
             # qcb,
         ],
     )
+    # # print all the training arguments
+    # print(trainer.__dict__)
+    # print("MODEL\n", model_module.model)
+    # print("Data Module\n", data_module)
+    # print("Trainer\n", trainer)
+    # # print dtypes of model parameters
+    # print("------------------------------------------------")
+    # for name, param in model_module.model.named_parameters():
+    #     print(name, param.dtype)
+    # print("------------------------------------------------")
+
+
+    
+
+    # exit()
+
     print("Trainer is ready")
     trainer.fit(
         model_module,
@@ -270,7 +299,7 @@ if __name__ == "__main__":
         if not args.exp_version
         else args.exp_version
     )
-
+    print("config:",  Path(config.result_path) / config.exp_name / config.exp_version )
     save_config_file(
         config, Path(config.result_path) / config.exp_name / config.exp_version
     )
